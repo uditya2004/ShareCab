@@ -76,7 +76,8 @@ fun CarpoolContent(modifier: Modifier = Modifier) {
     val scope = rememberCoroutineScope()
 
     var selectedDate by remember { mutableStateOf<Long?>(null) }
-    var selectedDropdownValue by remember { mutableStateOf("Select sorting") }
+    var selectedFilterDropdownValue by remember { mutableStateOf("Select sorting") }
+    var selectedHomeDropdownValue by remember { mutableStateOf("All Vehicle") }
 
     val defaultDate: Long? = null
     val defaultDropdownValue = "Select sorting"
@@ -106,7 +107,7 @@ fun CarpoolContent(modifier: Modifier = Modifier) {
                     options = listOf("All Vehicle", "Eco Van", "Ertiga", "Bolero"),
                     onValueChanged = {newValue ->
                         // Update the state with the new dropdown selection
-                        selectedDropdownValue = newValue
+                        selectedHomeDropdownValue = newValue
                     }
                 )
 
@@ -134,7 +135,7 @@ fun CarpoolContent(modifier: Modifier = Modifier) {
 
                 if (showBottomSheet) {
                     var tempSelectedDate by remember { mutableStateOf(selectedDate) }
-                    var tempSelectedDropdownValue by remember { mutableStateOf(selectedDropdownValue) }
+                    var tempSelectedDropdownValue by remember { mutableStateOf(selectedFilterDropdownValue) }
 
                     ModalBottomSheet(
                         containerColor = Color.White,
@@ -153,7 +154,7 @@ fun CarpoolContent(modifier: Modifier = Modifier) {
                             // Parameter - 3
                             onSaveClick = { newSelectedDate, newSelectedDropdownValue ->
                                 selectedDate = newSelectedDate
-                                selectedDropdownValue = newSelectedDropdownValue
+                                selectedFilterDropdownValue = newSelectedDropdownValue
 
                                 // Hiding the bottom sheet after saving the changes
                                 scope.launch { sheetState.hide() }.invokeOnCompletion {
