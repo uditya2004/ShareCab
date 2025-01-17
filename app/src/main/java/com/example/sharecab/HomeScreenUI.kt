@@ -1,21 +1,23 @@
 package com.example.sharecab
 
 
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AirlineSeatReclineNormal
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.RadioButtonChecked
 import androidx.compose.material.icons.filled.Tune
@@ -30,18 +32,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.sharecab.components.DropdownMenuButton
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.coroutines.cancellation.CancellationException
+
 
 //==============================
 // Home Screen
@@ -58,8 +60,7 @@ data class RideDetailItems(
     val to: String,
     val seats: String,
     val price: String,
-    val vehicleType: String,
-    val bookingStatus: String = "Not Booked",
+    val vehicleType: String
 )
 //==============================
 
@@ -82,139 +83,156 @@ fun CarpoolContent(modifier: Modifier = Modifier) {
     val defaultDate: Long? = null
     val defaultDropdownValue = "Select sorting"
 
-    Box(modifier = modifier.fillMaxSize().background(Color.White)) {
-        Column(
-            modifier = modifier
-                .padding(16.dp)
-                .background(Color.White)
+    val rideItems = listOf(
+        RideDetailItems(
+            date = "10/01/2025" + ",  "+ "21:45",
+            from = "VIT",
+            to = "RKMP",
+            seats = "4/4",
+            price = "₹400/person",
+            vehicleType = "Ertiga"
+        ),
+        RideDetailItems(
+            date = "21/01/2025" + ",  " + "08:30",
+            from = "VIT",
+            to = "BPL",
+            seats = "2/2",
+            price = "₹800/person",
+            vehicleType = "Eco van"
+        ),
+
+        RideDetailItems(
+            date = "29/01/2025" + ",  " + "08:30",
+            from = "Sehore",
+            to = "Ashta",
+            seats = "2/2",
+            price = "₹800/person",
+            vehicleType = "Eco van"
+        ),
+        RideDetailItems(
+            date = "26/01/2025" + ",  " + "08:30",
+            from = "Indore",
+            to = "VIT",
+            seats = "2/2",
+            price = "₹800/person",
+            vehicleType = "Eco van"
+        )
+    )
+
+    Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        LazyColumn (
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier
                 .fillMaxSize()
-        ) {
-
-            //Column element:- Button to Search which open Alert Dialog
-            SearchFieldsBox()
-
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            //Column element:- Filter and DropDown Button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                //DropDown Button
-                DropdownMenuButton(
-                    defaultValue = "All Vehicle",
-                    options = listOf("All Vehicle", "Eco Van", "Ertiga", "Bolero"),
-                    onValueChanged = {newValue ->
-                        // Update the state with the new dropdown selection
-                        selectedHomeDropdownValue = newValue
-                    }
-                )
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                // Filter Button  -----------
-                Button(
-                    onClick = {
-                        showBottomSheet = true  /* IMPLEMENT MORE FILTER BUTTON*/
-                    },
-                    shape = RoundedCornerShape(30),
-                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White)
-                ) {
-                    Row (verticalAlignment = Alignment.CenterVertically){
-                        Icon(
-                            imageVector = Icons.Default.Tune,
-                            contentDescription = "Tune Icon",
-                            tint = Color.Black
-                        )
-                        Spacer(modifier = Modifier.width(5.dp))
-                        Text("More Filters", color = Color.Black)
-                    }
-                }
-
-                if (showBottomSheet) {
-                    var tempSelectedDate by remember { mutableStateOf(selectedDate) }
-                    var tempSelectedDropdownValue by remember { mutableStateOf(selectedFilterDropdownValue) }
-
-                    ModalBottomSheet(
-                        containerColor = Color.White,
-                        onDismissRequest = {
-                            showBottomSheet = false
-                        },
-                        sheetState = sheetState
-                    ) {
-                        BottomSheetContent(
-                            // Parameter - 1
-                            initialSelectedDate = tempSelectedDate,
-
-                            // Parameter - 2
-                            initialSelectedDropdownValue = tempSelectedDropdownValue,
-
-                            // Parameter - 3
-                            onSaveClick = { newSelectedDate, newSelectedDropdownValue ->
-                                selectedDate = newSelectedDate
-                                selectedFilterDropdownValue = newSelectedDropdownValue
-
-                                // Hiding the bottom sheet after saving the changes
-                                scope.launch { sheetState.hide() }.invokeOnCompletion {
-                                    if (it !is CancellationException) {  // this code ensures that the bottom sheet is hidden only if the coroutine completes successfully and not if it was cancelled.
-                                        showBottomSheet = false
-                                    }
-                                }
-                            },
-
-                            // Parameter - 4
-                            onCancelClick = {
-                                scope.launch { sheetState.hide() }.invokeOnCompletion {
-                                    if (it !is CancellationException) {
-                                        showBottomSheet = false
-                                    }
-                                }
-                            },
-
-                            // Parameter - 5
-                            onResetClick = {
-                                tempSelectedDate = defaultDate
-                                tempSelectedDropdownValue = defaultDropdownValue
-                            },
-
-                            // Parameter - 6
-                            onDateSelected = { tempSelectedDate = it },
-
-                            // Parameter - 7
-                            onDropdownItemSelected = { tempSelectedDropdownValue = it }
-                        )
-                    }
-                }
-
-                // Filter Button ENDS  -----------
+                .padding(16.dp)
+        ){
+            item{
+                Spacer(modifier = Modifier.height(48.dp))
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            //Column element:- Button to Search which open Alert Dialog
+            item{
+                SearchFieldsBox()
+            }
 
-            //Some fake data to show ride cards
-            val rideItems = listOf(
-                RideDetailItems(
-                    date = "10/01/2025" + ",  "+ "21:45",
-                    from = "VIT",
-                    to = "RKMP",
-                    seats = "4/4",
-                    price = "₹400/person",
-                    vehicleType = "Ertiga"
-                ),
-                RideDetailItems(
-                    date = "21/01/2025" + ",  " + "08:30",
-                    from = "VIT",
-                    to = "BPL",
-                    seats = "2/2",
-                    price = "₹800/person",
-                    vehicleType = "Eco van"
-                )
-            )
+            item{
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(5.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    //DropDown Button
+                    DropdownMenuButton(
+                        defaultValue = "All Vehicle",
+                        options = listOf("All Vehicle", "Eco Van", "Ertiga", "Bolero"),
+                        onValueChanged = {newValue ->
+                            // Update the state with the new dropdown selection
+                            selectedHomeDropdownValue = newValue
+                        }
+                    )
 
-            // Render ride cards
-            rideItems.forEach { item ->
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    // Filter Button  -----------
+                    Button(
+                        onClick = {
+                            showBottomSheet = true  /* IMPLEMENT MORE FILTER BUTTON*/
+                        },
+                        shape = RoundedCornerShape(30),
+                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+                    ) {
+                        Row (verticalAlignment = Alignment.CenterVertically){
+                            Icon(
+                                imageVector = Icons.Default.Tune,
+                                contentDescription = "Tune Icon",
+                                tint = Color.Black
+                            )
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text("More Filters", color = Color.Black)
+                        }
+                    }
+
+                    if (showBottomSheet) {
+                        var tempSelectedDate by remember { mutableStateOf(selectedDate) }
+                        var tempSelectedDropdownValue by remember { mutableStateOf(selectedFilterDropdownValue) }
+
+                        ModalBottomSheet(
+                            containerColor = MaterialTheme.colorScheme.background,
+                            onDismissRequest = {
+                                showBottomSheet = false
+                            },
+                            sheetState = sheetState
+                        ) {
+                            BottomSheetContent(
+                                // Parameter - 1
+                                initialSelectedDate = tempSelectedDate,
+
+                                // Parameter - 2
+                                initialSelectedDropdownValue = tempSelectedDropdownValue,
+
+                                // Parameter - 3
+                                onSaveClick = { newSelectedDate, newSelectedDropdownValue ->
+                                    selectedDate = newSelectedDate
+                                    selectedFilterDropdownValue = newSelectedDropdownValue
+
+                                    // Hiding the bottom sheet after saving the changes
+                                    scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                        if (it !is CancellationException) {  // this code ensures that the bottom sheet is hidden only if the coroutine completes successfully and not if it was cancelled.
+                                            showBottomSheet = false
+                                        }
+                                    }
+                                },
+
+                                // Parameter - 4
+                                onCancelClick = {
+                                    scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                        if (it !is CancellationException) {
+                                            showBottomSheet = false
+                                        }
+                                    }
+                                },
+
+                                // Parameter - 5
+                                onResetClick = {
+                                    tempSelectedDate = defaultDate
+                                    tempSelectedDropdownValue = defaultDropdownValue
+                                },
+
+                                // Parameter - 6
+                                onDateSelected = { tempSelectedDate = it },
+
+                                // Parameter - 7
+                                onDropdownItemSelected = { tempSelectedDropdownValue = it }
+                            )
+                        }
+                    }
+
+                    // Filter Button ENDS  -----------
+                }
+            }
+
+
+            items(rideItems) { item ->
                 RideCard(
                     date = item.date,
                     from = item.from,
@@ -223,9 +241,12 @@ fun CarpoolContent(modifier: Modifier = Modifier) {
                     price = item.price,
                     vehicleType = item.vehicleType
                 )
-
-                Spacer(modifier = Modifier.height(16.dp))
             }
+
+            item{
+                Spacer(modifier = Modifier.height(48.dp))
+            }
+
         }
     }
 }
@@ -249,7 +270,7 @@ fun BottomSheetContent(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
         var showDatePickerDialog by remember { mutableStateOf(false) }   // state that determines whether the DatePickerDialog should be shown or not
         val datePickerState = rememberDatePickerState(initialSelectedDate)  //the datePickerState variable stores the state of the currently selected date inside the date picker dialog.
@@ -262,7 +283,20 @@ fun BottomSheetContent(
             selectedDropdown = initialSelectedDropdownValue
         }
 
+        // Cancel IconButton
+        IconButton(
+            onClick = onCancelClick,
+            modifier = Modifier.align(Alignment.End)
+        ){
+            Icon(
+                imageVector = Icons.Filled.Cancel,
+                contentDescription = "Cancel",
+                tint = Color.Black
+            )
+        }
+
         Text(text = "Date of Travel", fontSize = 16.sp, color = Color.Black, fontWeight = FontWeight.Bold)
+
         // Select Date button
         Button(
             onClick = { showDatePickerDialog = true },
@@ -275,12 +309,12 @@ fun BottomSheetContent(
 
         if (showDatePickerDialog) {
             DatePickerDialog(
-                colors = DatePickerDefaults.colors(containerColor = Color.White),
+                colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background),
                 onDismissRequest = { showDatePickerDialog = false },
                 confirmButton = {
                     Button(
                         shape = RoundedCornerShape(20),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3A82F7)),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
                         onClick = {
                             datePickerState.selectedDateMillis?.let {
                                 onDateSelected(it)
@@ -295,18 +329,18 @@ fun BottomSheetContent(
                 dismissButton = {
                     Button(
                         shape = RoundedCornerShape(20),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3A82F7)),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
                         onClick = { showDatePickerDialog = false }
                     ) {
-                        Text("Cancel")
+                        Text("Cancel",color = Color.White)
                     }
                 }
             ) {
-                DatePicker(state = datePickerState, colors = DatePickerDefaults.colors(Color.White))
+                DatePicker(state = datePickerState, colors = DatePickerDefaults.colors(MaterialTheme.colorScheme.background))
             }
         }
 
-        Spacer(modifier = Modifier.height(7.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         Text(text = "Sort By", fontSize = 16.sp, color = Color.Black, fontWeight = FontWeight.Bold)
 
@@ -321,42 +355,50 @@ fun BottomSheetContent(
             }
         }
 
-        Spacer(modifier = Modifier.height(15.dp))
+        Spacer(modifier = Modifier.height(20.dp))
+
+        //Horizontal divider
+        HorizontalDivider(
+            color = Color.LightGray,
+            thickness = 1.dp,
+            modifier = Modifier.fillMaxWidth().padding(10.dp)
+        )
+
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
         ) {
+            // Reset Button
             Button(
+                modifier = Modifier.weight(1f),
                 onClick = {
                     datePickerState.selectedDateMillis = null
                     selectedDateText = "Select Date"
                     selectedDropdown = initialSelectedDropdownValue // Reset local state
                     onResetClick()
                 },
-                shape = RoundedCornerShape(20),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
+                shape = RoundedCornerShape(50),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFB0B0B0),
+                    contentColor = Color.White
+                )
             ) {
                 Text("Reset", color = Color.White)
             }
-            Row {
-                Button(
-                    onClick = onCancelClick,
-                    shape = RoundedCornerShape(20),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3A82F7))
-                ) {
-                    Text("Cancel")
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(
-                    onClick = {
-                        onSaveClick(datePickerState.selectedDateMillis, selectedDropdown)
-                    },
-                    shape = RoundedCornerShape(20),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3A82F7))
-                ) {
-                    Text("Save")
-                }
+
+            Spacer(modifier = Modifier.width(20.dp))
+
+            //Apply Button
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = {
+                    onSaveClick(datePickerState.selectedDateMillis, selectedDropdown)
+                },
+                shape = RoundedCornerShape(50),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+            ) {
+                Text("Apply", color = Color.White)
             }
         }
     }
@@ -384,6 +426,7 @@ fun SearchFieldsBox() {
                 color = Color.LightGray,
                 shape = RoundedCornerShape(16.dp)
             )
+            .background(color = MaterialTheme.colorScheme.tertiary)
             .padding(8.dp)
     ) {
         Column {
@@ -443,63 +486,6 @@ fun SearchFieldsBox() {
 
 
 //=======================
-// DropdownMenu
-//=======================
-@Composable
-fun DropdownMenuButton(
-    options: List<String>,
-    defaultValue: String,
-    onValueChanged: (String) -> Unit
-) {
-    val focusManager = LocalFocusManager.current
-    var expanded by remember { mutableStateOf(false) }
-    var selectedOption by remember { mutableStateOf(defaultValue) }
-
-    Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
-        Button(
-            onClick = {
-                focusManager.clearFocus()   // Clear focus to hide the keyboard, then toggle menu.
-                expanded = !expanded
-            },
-            border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-            shape = RoundedCornerShape(30)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = selectedOption, color = Color.Black)
-                Spacer(Modifier.width(3.dp))
-                Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = null,
-                    tint = Color.Black,
-                    modifier = Modifier.rotate(if (expanded) 180f else 0f)
-                )
-            }
-        }
-
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.background(Color.White)
-        ) {
-            options.forEach { option ->
-                DropdownMenuItem(
-                    onClick = {
-                        selectedOption = option
-                        onValueChanged(option)
-                        expanded = false
-                    },
-                    text = {
-                        Text(text = option)
-                    }
-                )
-            }
-        }
-    }
-}
-
-
-//=======================
 // Ride Card
 //=======================
 @Composable
@@ -509,12 +495,11 @@ fun RideCard(
     to: String,
     seats: String,
     price: String,
-    vehicleType: String,
-    bookingStatus: String = "Not Booked"
+    vehicleType: String
 ) {
     Card(
         shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiary),
         modifier = Modifier
             .fillMaxWidth()
             .border(1.dp, Color(0xFFE2E8EB), RoundedCornerShape(8.dp))
@@ -539,11 +524,8 @@ fun RideCard(
                     Spacer(modifier = Modifier.width(8.dp))
 
                     //Row Element - 3 -> Date Text
-                    Text(text = date, fontWeight = FontWeight.Medium)
+                    Text(text = date, fontWeight = FontWeight.Medium, color = Color.Black)
                 }
-
-                //Row Element - 5 -> Booking Status
-                Text(text = bookingStatus, color = Color.Gray)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -592,7 +574,8 @@ fun RideCard(
                     // Car Icon
                     Icon(
                         painter = painterResource(id = R.drawable.lucide_car),
-                        contentDescription = "Car Icon"
+                        contentDescription = "Car Icon",
+                        tint = Color.Black
                     )
 
                     Spacer(modifier = Modifier.width(8.dp))
@@ -610,14 +593,14 @@ fun RideCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ){
-                Text(text = price, fontSize = 17.sp, color = Color(0xFF3A82F7), fontWeight = FontWeight.Bold)
+                Text(text = price, fontSize = 17.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
 
 //                Spacer(modifier = Modifier.width(20.dp))
 
                 Button(
                     onClick = { /* Join Ride */ },
                     shape = RoundedCornerShape(20),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3A82F7))
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
                 ) {
                     Text(text = "Join Ride", color = Color.White)
                 }
